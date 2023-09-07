@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Game</title>
+    <style>canvas {border: 1px solid black;}body{font-family: arial}</style>
+</head>
+<body>
+	<h1>BALL BRAWL</h1>
+	<h2>V1</h2>
+    <pre id="label1">NA</pre>
+    <pre id="label2">NA</pre>
+    <pre id="label3">NA</pre>
+    <pre id="label4">NA</pre>
+    <canvas id="game_canvas" width="600" height="400"></canvas>
+
+
+    <script>
+        let lastTime = 0;
+        let minFPS = 1000;
+        const canvas = document.getElementById("game_canvas");
+        const label1=document.getElementById("label1");
+        const label2=document.getElementById("label2");
+        const label3=document.getElementById("label3");
+        const label4=document.getElementById("label4");
+        const ctx = canvas.getContext("2d");
+        const players = []
+        const keys = {};
+        const rules = {
+            lives : 3,
+            jumpHeight : 12,
+            acc : 5,
+            maxJumps :2, 
+        }
+
+        function newPlayer() {
+        	players.push({
+        	id: players.length+1,
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 20,
+            speedX: 0,
+            speedY: 0,
+            gravity: 0.5,
+            onGround: false,
+            jumpCount: 0, 
+            freefall : false,
+        	})
+        }
+
+        const boxes = [
+            { x: 50, y: 100, width: 30, height: 30, hits: 0 },
+            { x: 250, y: 150, width: 40, height: 40, hits: 0 },
+            { x: 300, y: 250, width: 50, height: 50, hits: 0 }
+        ];
+
+		const ground = [
+            { x: 100, y: 100, width: 100, height: 10 },
+            { x: 300, y: 150, width: 200, height: 10 },
+            { x: 100, y: 250, width: 150, height: 10 }
+        ];
+
+        function drawPlayer(player) {
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "blue";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawBoxes() {
+            boxes.forEach((box) => {
+                if (box.hits < 3) {
+                    ctx.fillStyle = "brown";
+                    ctx.fillRect(box.x, box.y, box.width, box.height);
+                }
+            });
+        }        
+
+        function drawGround(grd) {
+	        ctx.fillStyle = "green";
+	        ctx.fillRect(grd.x, grd.y, grd.width, grd.height);
+        }
+
+        function registerAction(player){
+        	if (player.freefall) return 0 ;
+            if(keys["ArrowUp"] && player.jumpCount < rules.maxJumps){
+                player.jumpCount +=1
+                player.speedY = -rules.jumpHeight;
+                keys["ArrowUp"] = false;
+            }    
+            if(keys["ArrowDown"] )  player.speedY  += 2;
+            if(keys["ArrowLeft"])   player.speedX  = -rules.acc;
+            if(keys["ArrowRight"])  player.speedX  =  rules.acc;
+        }
+
+
+        function updatePlayer(player) {
+        	registerAction(player)
+			
+			player.y += player.speedY;
+            player.x += player.speedX;
+            player.speedX=player.speedX/1.1;
+            
+            if (Math.abs(player.speedX) < .2) player.speedX = 0
+            if (Math.abs(player.speedY) < .2) player.speedY = 0
+
+        }
+        // function checkCollision(box, player) {
+
+
+        //     if (
+        //         player.x + player.radius >= box.x &&
+        //         player.x - player.radius <= box.x + box.width &&
+        //         player.y + player.radius >= box.y &&
+        //         player.y - player.radius <= box.y + box.height
+        //     ) {
+        //     	player.speedX=0;
+        //     	player.freefall= true;
+		// 		box.hits++;
+        //         if (box.hits >= 3) boxes.splice(boxes.indexOf(box), 1);
+        //     }
+        // }
+
+        function applyGravity(object) {
+            if (object.y + object.radius < canvas.height) {
+                object.speedY += object.gravity;
+                object.onGround = false; 
+            } else {
+                object.y = canvas.height - object.radius;
+                object.onGround = true;
+                object.freefall = false;
+                object.jumpCount= 0;
+            }
+        }
+
+
+
+
+        function gameLoop(timestamp) {
+            const deltaTime = timestamp - lastTime;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        	ground.forEach(drawGround)
+
+            players.forEach( updatePlayer);
+            players.forEach( applyGravity);
+            players.forEach( drawPlayer);
+            
+
+            if(keys["KeyF"])  minFPS  = 1000;
+            fps = Math.round(1000/deltaTime)
+            minFPS = Math.min(fps, minFPS)
+            label1.innerHTML= fps
+            label2.innerHTML= minFPS
+            label3.innerHTML= keys["last"]
+            lastTime = timestamp;
+            requestAnimationFrame(gameLoop);
+        }
+
+        requestAnimationFrame(gameLoop);
+
+        window.addEventListener("keydown", (e) => {
+        	keys[e.code] = true;
+        	keys["last"] = e.code;
+        	if (e.code=="KeyN") newPlayer() 
+        });
+        window.addEventListener("keyup", (e) => {keys[e.code] = false;});
+
+
+        newPlayer()
+
+    </script>
+</body>
+</html>

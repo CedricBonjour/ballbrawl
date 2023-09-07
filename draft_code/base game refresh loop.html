@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Move Circle with Arrow Keys</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="myCanvas" width="400" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById("myCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const circle = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 20,
+            speed: 5
+        };
+
+        let lastTime = 0;
+
+        function drawCircle() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "blue";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function moveCircle(e) {
+            switch (e.key) {
+                case "ArrowUp":
+                    circle.y -= circle.speed;
+                    break;
+                case "ArrowDown":
+                    circle.y += circle.speed;
+                    break;
+                case "ArrowLeft":
+                    circle.x -= circle.speed;
+                    break;
+                case "ArrowRight":
+                    circle.x += circle.speed;
+                    break;
+            }
+        }
+
+        function gameLoop(timestamp) {
+            const deltaTime = timestamp - lastTime;
+
+            // Clear and redraw the canvas
+            drawCircle();
+
+            // Handle user input
+            window.addEventListener("keydown", moveCircle);
+
+            // Calculate the new position of the circle here, if needed
+
+            // Request the next frame
+            requestAnimationFrame(gameLoop);
+
+            lastTime = timestamp;
+        }
+
+        // Start the game loop
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>

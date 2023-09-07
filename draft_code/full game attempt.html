@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Game</title>
+    <style>canvas {border: 1px solid black;}</style>
+</head>
+<body>
+    <canvas id="game_canvas" width="400" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById("game_canvas");
+        const ctx = canvas.getContext("2d");
+
+        const keys = {};
+
+
+        const rules = {
+            lives : 3,
+            jumpHeight : 12,
+            acc : 5,
+            maxJumps :2, 
+        }
+
+
+        const circle = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 20,
+            speedX: 0,
+            speedY: 0,
+            gravity: 0.5,
+            onGround: false,
+            jumpCount: 0,
+
+
+            isSwinging: false,
+            swingAngle: 0,
+            swordLength: 30,
+            swingSpeed: 0.1
+        };
+
+        const boxes = [
+            { x: 50, y: 100, width: 30, height: 30, hits: 0 },
+            { x: 250, y: 150, width: 40, height: 40, hits: 0 },
+            { x: 300, y: 250, width: 50, height: 50, hits: 0 }
+        ];
+
+        let lastTime = 0;
+
+        function drawCircle() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "blue";
+            ctx.fill();
+            ctx.closePath();
+
+            if (circle.isSwinging) {
+                ctx.beginPath();
+                const swordEndX = circle.x + Math.cos(circle.swingAngle) * circle.swordLength;
+                const swordEndY = circle.y + Math.sin(circle.swingAngle) * circle.swordLength;
+                ctx.moveTo(circle.x, circle.y);
+                ctx.lineTo(swordEndX, swordEndY);
+                ctx.strokeStyle = "red";
+                ctx.stroke();
+                ctx.closePath();
+            }
+        }
+
+        function drawBoxes() {
+            boxes.forEach((box) => {
+                if (box.hits < 3) {
+                    ctx.fillStyle = "green";
+                    ctx.fillRect(box.x, box.y, box.width, box.height);
+                }
+            });
+        }
+
+        function moveCircle() {
+
+            if(keys["ArrowUp"] && circle.jumpCount < rules.maxJumps){
+                circle.jumpCount +=1
+                circle.speedY = -rules.jumpHeight;
+                keys["ArrowUp"] = false;
+            }    
+            if(keys["ArrowDown"] )  circle.speedY  += 2;
+            if(keys["ArrowLeft"])   circle.speedX  = -rules.acc;
+            if(keys["ArrowRight"])  circle.speedX  =  rules.acc;
+
+        }
+
+        function swingSword() {
+            if (!circle.isSwinging) {
+                circle.isSwinging = true;
+                circle.swingAngle = 0;
+                setTimeout(() => {
+                    circle.isSwinging = false;
+                }, 200); // Adjust the duration of the swing animation
+            }
+        }
+
+        function checkCollision(box) {
+            if (
+                circle.x + circle.radius >= box.x &&
+                circle.x - circle.radius <= box.x + box.width &&
+                circle.y + circle.radius >= box.y &&
+                circle.y - circle.radius <= box.y + box.height
+            ) {
+                // Ball has collided with the box
+                if (!circle.isSwinging) {
+                    // Only count hits if the ball is swinging the sword
+                    box.hits++;
+                }
+                if (box.hits >= 3) {
+                    // Remove the box after 3 hits
+                    boxes.splice(boxes.indexOf(box), 1);
+                }
+            }
+        }
+
+        function applyGravity() {
+            if (circle.y + circle.radius < canvas.height) {
+                circle.speedY += circle.gravity;
+                circle.onGround = false; 
+            } else {
+                circle.y = canvas.height - circle.radius;
+                circle.onGround = true;
+                circle.jumpCount = 0;
+            }
+        }
+
+        function gameLoop(timestamp) {
+            const deltaTime = timestamp - lastTime;
+            
+            circle.y += circle.speedY;
+            circle.x += circle.speedX;
+            applyGravity();
+            moveCircle()
+
+            boxes.forEach(checkCollision);
+            circle.speedX=circle.speedX/1.1;
+            if (Math.abs(circle.speedX) < .2) circle.speedX = 0
+            if (Math.abs(circle.speedY) < .2) circle.speedY = 0
+            drawCircle();
+            drawBoxes();
+           
+
+            if (circle.isSwinging) {
+                circle.swingAngle += circle.swingSpeed;
+            }
+
+           
+
+
+
+
+            requestAnimationFrame(gameLoop);
+
+            lastTime = timestamp;
+        }
+
+        window.addEventListener("keydown", (e) => {
+            if (e.key === " ") { // Space bar
+                swingSword();
+            }
+        });
+
+        requestAnimationFrame(gameLoop);
+
+        window.addEventListener("keydown", (e) => {
+        keys[e.key] = true;
+        });
+
+        window.addEventListener("keyup", (e) => {
+        keys[e.key] = false;
+        });
+    </script>
+</body>
+</html>
